@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tambahkan di global CSS atau Tailwind custom */
+.ProseMirror {
+  table {
+    border-collapse: collapse;
+    margin: 0;
+    overflow: hidden;
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  table td,
+  table th {
+    border: 1px solid #d1d5db;
+    box-sizing: border-box;
+    min-width: 1em;
+    padding: 8px 12px;
+    position: relative;
+    vertical-align: top;
+  }
+
+  table th {
+    background-color: #f9fafb;
+    font-weight: bold;
+    text-align: left;
+  }
+
+  table .selectedCell {
+    background-color: #e5e7eb;
+  }
+
+  /* Table controls */
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .resize-cursor {
+    cursor: col-resize;
+  }
+}
