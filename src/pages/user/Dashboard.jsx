@@ -1,6 +1,8 @@
 // src/pages/user/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext'; // ✅ IMPORT USE AUTH
+import { useNavigate } from 'react-router-dom'; // ✅ IMPORT NAVIGATE
 import LanguageCard from '../../components/LanguageCard';
 import ProgressStats from '../../components/ProgressStats';
 
@@ -9,6 +11,10 @@ const Dashboard = () => {
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // ✅ HOOKS BARU
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -19,7 +25,7 @@ const Dashboard = () => {
       setError(null);
       
       const [languagesRes, progressRes] = await Promise.all([
-        userAPI.languages.getAll(), // ✅ PASTIKAN METHOD NAME BENER
+        userAPI.languages.getAll(),
         userAPI.progress.get()
       ]);
       
@@ -29,7 +35,6 @@ const Dashboard = () => {
       console.error('Failed to fetch dashboard data:', error);
       setError('Failed to load data. Please try again.');
       
-      // Set default data jika error
       setProgress({
         total_exp: 0,
         level: 1,
@@ -40,6 +45,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ FUNCTION UNTUK KE PROFILE
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   if (loading) {
@@ -59,10 +69,53 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome to LCode! 🚀</h1>
-        <p className="text-gray-600">Continue your programming journey</p>
+      {/* HEADER SECTION WITH PROFILE BUTTON */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome to LCode! 🚀
+          </h1>
+          <p className="text-gray-600">
+            {user?.name ? `Hello, ${user.name}! Continue your programming journey` : 'Continue your programming journey'}
+          </p>
+        </div>
+        
+
+{/* ✅ UPDATE EXP REFERENCE */}
+<button
+  onClick={handleProfileClick}
+  className="flex items-center px-4 py-3 space-x-3 transition-all duration-200 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md"
+>
+  <div className="flex items-center space-x-2">
+    <img 
+      src={user?.avatar || '/default-avatar.png'} 
+      alt="Profile"
+      className="w-8 h-8 border-2 border-indigo-100 rounded-full"
+    />
+    <div className="text-left">
+      <p className="text-sm font-medium text-gray-900">
+        View Profile
+      </p>
+      {/* ✅ PAKE total_exp BUKAN exp */}
+      <p className="text-xs text-gray-500">
+        {progress?.total_exp || 0} EXP • Level {progress?.level || 1}
+      </p>
+    </div>
+  </div>
+  <svg 
+    className="w-5 h-5 text-gray-400" 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 24 24"
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth={2} 
+      d="M9 5l7 7-7 7" 
+    />
+  </svg>
+</button>
       </div>
 
       {/* Progress Stats */}

@@ -49,6 +49,8 @@ const isAnswerProvided = () => {
   }
 };
 // ✅ COMPLETE FIXED handleSubmit
+// src/components/ExerciseComponent.jsx - SIMPLIFY!
+
 const handleSubmit = async () => {
   try {
     setLoading(true);
@@ -63,47 +65,20 @@ const handleSubmit = async () => {
     
     console.log('Submitting:', { type: exercise.type, answer: answerToSubmit });
     
-    let response;
-    if (exercise.type === 'code_test') {
-      // ✅ SPECIAL ENDPOINT UNTUK CODE EXECUTION
-      response = await userAPI.exercises.checkCodeTest({
-        exercise_id: exercise.id,
-        user_answer: answerToSubmit
-      });
-      
-      // ✅ SET ACTUAL OUTPUT UNTUK DITAMPILKAN
-      setActualOutput(response.data.actual_output || '(No output)');
-      
-      // ✅ JIKA CODE TEST BERHASIL, PAKAI completeExercise UNTUK PROGRESS & BADGES
-      if (response.data.is_correct) {
-        const progressResponse = await userAPI.progress.completeExercise({
-          exercise_id: exercise.id,
-          user_answer: answerToSubmit
-        });
-        
-        // ✅ GABUNGKAN RESPONSE DATA
-        response.data = {
-          ...progressResponse.data,
-          actual_output: response.data.actual_output, // Keep the code output
-          execution_result: response.data.execution_result // Keep execution details
-        };
-      }
-      
-    } else {
-      // ✅ STANDARD ENDPOINT UNTUK LAINNYA
-      response = await userAPI.progress.completeExercise({
-        exercise_id: exercise.id,
-        user_answer: answerToSubmit
-      });
-    }
+    // ✅ GUNAKAN SATU ENDPOINT UNTUK SEMUA TIPE!
+    const response = await userAPI.progress.completeExercise({
+      exercise_id: exercise.id,
+      user_answer: answerToSubmit
+    });
     
     console.log('Server response:', response.data);
     
     // ✅ UPDATE STATE
     setIsCorrect(response.data.is_correct);
     setCompleted(response.data.is_correct);
+    setActualOutput(response.data.actual_output || ''); // Untuk code test
     
-    // ✅ PASTIKAN onComplete DIPANGGIL UNTUK SEMUA TIPE EXERCISE
+    // ✅ PANGGIL onComplete
     if (onComplete && response.data) {
       onComplete(response.data);
     }
@@ -111,11 +86,10 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error('Submission failed:', error);
     setIsCorrect(false);
-    setActualOutput('(Execution failed)');
+    setActualOutput('(Submission failed)');
     
-    // ✅ SHOW ERROR MESSAGE
     if (error.response?.data?.error) {
-      alert(`Execution error: ${error.response.data.error}`);
+      alert(`Error: ${error.response.data.error}`);
     }
   } finally {
     setLoading(false);

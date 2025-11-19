@@ -85,13 +85,24 @@ export const userAPI = {
   exercises: {
     getById: (id) => axios.get(`/api/exercises/${id}`),
     submitAnswer: (exerciseId, answer) => 
-      axios.post(`/api/exercises/${exerciseId}/submit`, { answer }),
-    checkCodeTest: (data) => api.post('/exercises/code-test/check', data)
+      axios.post(`/api/exercises/${exerciseId}/submit`, { answer })
   },
     badges: {
     getUserBadges: () => api.get('/user/badges'),
     getSectionBadges: (sectionId) => api.get(`/sections/${sectionId}/badges`),
   },
+    profile: {
+    getStats: () => api.get('/user/profile-stats'),
+    update: (data) => api.put('/user/profile', data),
+  },
+  
+  tree: {
+    getProgress: () => api.get('/user/tree-progress'),
+  },
+  
+  leaderboard: {
+    get: () => api.get('/user/leaderboard'),
+  }
 };
 
 // src/services/api.js - UPDATE LENGKAP
