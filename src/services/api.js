@@ -29,7 +29,8 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: () => (window.location.href = "http://localhost:8000/oauth/google"),
+  // login: () => (window.location.href = "http://localhost:8000/oauth/google"),
+  login: () => (window.location.href = "http://code.infinityfreeapp.com/oauth/google"),
   logout: () => api.post("/logout"),
   getUser: () => api.get("/user"),
 };

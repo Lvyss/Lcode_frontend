@@ -51,7 +51,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = () => {
-    window.location.href = 'http://localhost:8000/oauth/google';
+    // window.location.href = 'http://localhost:8000/oauth/google';
+    indow.location.href = 'http://lcode.infinityfreeapp.com/oauth/google';
   };
 
   const logout = async () => {
