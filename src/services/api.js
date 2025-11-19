@@ -1,16 +1,15 @@
 // src/services/api.js
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:8000/api';
-
+// const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = "http://lcode.infinityfreeapp.com/api";
 const api = axios.create({
   baseURL: API_BASE_URL,
-
 });
 
 // Request interceptor
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem("auth_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,7 +21,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem("auth_token");
       // window.location.href = '/login'; // ✅ COMMENT REDIRECT DULU
     }
     return Promise.reject(error);
@@ -30,49 +29,48 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-   login: () => window.location.href = 'http://localhost:8000/oauth/google', 
-  logout: () => api.post('/logout'),
-  getUser: () => api.get('/user'),
+  login: () => (window.location.href = "http://localhost:8000/oauth/google"),
+  logout: () => api.post("/logout"),
+  getUser: () => api.get("/user"),
 };
 
 export const languageAPI = {
-  getAll: () => api.get('/languages'),
+  getAll: () => api.get("/languages"),
   getSections: (languageId) => api.get(`/languages/${languageId}/sections`),
 };
-
 
 // src/services/api.js
 export const userAPI = {
   // Auth
   auth: {
-    login: (data) => api.post('/login', data),
-    logout: () => api.post('/logout'),
-    getUser: () => api.get('/user'),
+    login: (data) => api.post("/login", data),
+    logout: () => api.post("/logout"),
+    getUser: () => api.get("/user"),
   },
 
   // Progress
   progress: {
-    get: () => api.get('/user/progress'),
-        getPartProgress: (partId) => api.get(`/progress/part/${partId}`),
-        getSectionProgress: (sectionId) => api.get(`/progress/section/${sectionId}`), // ✅ NEW
-    completeExercise: (data) => api.post('/progress/complete-exercise', data),
-    getExerciseStatus: (exerciseId) => 
-      api.get(`/progress/exercise-status/${exerciseId}`) // ✅ METHOD BARU
-        
+    get: () => api.get("/user/progress"),
+    getPartProgress: (partId) => api.get(`/progress/part/${partId}`),
+    getSectionProgress: (sectionId) =>
+      api.get(`/progress/section/${sectionId}`), // ✅ NEW
+    completeExercise: (data) => api.post("/progress/complete-exercise", data),
+    getExerciseStatus: (exerciseId) =>
+      api.get(`/progress/exercise-status/${exerciseId}`), // ✅ METHOD BARU
   },
 
   // Languages
   languages: {
-    getAll: () => api.get('/languages'),
+    getAll: () => api.get("/languages"),
     getById: (id) => api.get(`/languages/${id}`),
     getSections: (id) => api.get(`/languages/${id}/sections`),
   },
 
   // Sections
-    sections: {
-      getById: (id) => api.get(`/sections/${id}`),
-      getParts: (id) => api.get(`/sections/${id}/parts`),
-    },
+  sections: {
+    getById: (id) => api.get(`/sections/${id}`),
+    getParts: (id) => api.get(`/sections/${id}/parts`),
+  },
 
   // Parts
   parts: {
@@ -84,75 +82,80 @@ export const userAPI = {
   // Exercises
   exercises: {
     getById: (id) => axios.get(`/api/exercises/${id}`),
-    submitAnswer: (exerciseId, answer) => 
-      axios.post(`/api/exercises/${exerciseId}/submit`, { answer })
+    submitAnswer: (exerciseId, answer) =>
+      axios.post(`/api/exercises/${exerciseId}/submit`, { answer }),
   },
-    badges: {
-    getUserBadges: () => api.get('/user/badges'),
+  badges: {
+    getUserBadges: () => api.get("/user/badges"),
     getSectionBadges: (sectionId) => api.get(`/sections/${sectionId}/badges`),
   },
-    profile: {
-    getStats: () => api.get('/user/profile-stats'),
-    update: (data) => api.put('/user/profile', data),
+  profile: {
+    getStats: () => api.get("/user/profile-stats"),
+    update: (data) => api.put("/user/profile", data),
   },
-  
+
   tree: {
-    getProgress: () => api.get('/user/tree-progress'),
+    getProgress: () => api.get("/user/tree-progress"),
   },
-  
+
   leaderboard: {
-    get: () => api.get('/user/leaderboard'),
-  }
+    get: () => api.get("/user/leaderboard"),
+  },
 };
 
 // src/services/api.js - UPDATE LENGKAP
 export const adminAPI = {
   dashboard: {
-    getStats: () => api.get('/admin/dashboard'),
+    getStats: () => api.get("/admin/dashboard"),
   },
   languages: {
-    get: () => api.get('/admin/languages'),
-    create: (data) => api.post('/admin/languages', data),
+    get: () => api.get("/admin/languages"),
+    create: (data) => api.post("/admin/languages", data),
     update: (id, data) => api.put(`/admin/languages/${id}`, data),
     delete: (id) => api.delete(`/admin/languages/${id}`),
   },
   sections: {
-    getByLanguage: (languageId) => api.get(`/admin/languages/${languageId}/sections`),
-    create: (data) => api.post('/admin/sections', data),
+    getByLanguage: (languageId) =>
+      api.get(`/admin/languages/${languageId}/sections`),
+    create: (data) => api.post("/admin/sections", data),
     update: (id, data) => api.put(`/admin/sections/${id}`, data),
     delete: (id) => api.delete(`/admin/sections/${id}`),
   },
   parts: {
     getBySection: (sectionId) => api.get(`/admin/sections/${sectionId}/parts`),
-    create: (data) => api.post('/admin/parts', data),
+    create: (data) => api.post("/admin/parts", data),
     update: (id, data) => api.put(`/admin/parts/${id}`, data),
     delete: (id) => api.delete(`/admin/parts/${id}`), // ✅ INI MASIH DELETE
   },
-  
+
   contentBlocks: {
     getByPart: (partId) => api.get(`/admin/parts/${partId}/content-blocks`),
-    create: (partId, data) => api.post(`/admin/parts/${partId}/content-blocks`, data),
-    update: (partId, blockId, data) => api.put(`/admin/parts/${partId}/content-blocks/${blockId}`, data),
-    delete: (partId, blockId) => api.delete(`/admin/parts/${partId}/content-blocks/${blockId}`),
+    create: (partId, data) =>
+      api.post(`/admin/parts/${partId}/content-blocks`, data),
+    update: (partId, blockId, data) =>
+      api.put(`/admin/parts/${partId}/content-blocks/${blockId}`, data),
+    delete: (partId, blockId) =>
+      api.delete(`/admin/parts/${partId}/content-blocks/${blockId}`),
   },
   exercises: {
     getByPart: (partId) => api.get(`/admin/parts/${partId}/exercises`),
-    create: (data) => api.post('/admin/exercises', data),
+    create: (data) => api.post("/admin/exercises", data),
     update: (id, data) => api.put(`/admin/exercises/${id}`, data),
     delete: (id) => api.delete(`/admin/exercises/${id}`),
   },
   badges: {
-  get: () => api.get('/admin/badges'),
-  getSections: () => api.get('/admin/badges/sections'), // ✅ NEW ENDPOINT
-  create: (data) => api.post('/admin/badges', data, {
-    headers: { 'Content-Type': 'multipart/form-data' } // ✅ IMPORTANT FOR FILES
-  }),
-  update: (id, data) => api.put(`/admin/badges/${id}`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  delete: (id) => api.delete(`/admin/badges/${id}`),
+    get: () => api.get("/admin/badges"),
+    getSections: () => api.get("/admin/badges/sections"), // ✅ NEW ENDPOINT
+    create: (data) =>
+      api.post("/admin/badges", data, {
+        headers: { "Content-Type": "multipart/form-data" }, // ✅ IMPORTANT FOR FILES
+      }),
+    update: (id, data) =>
+      api.put(`/admin/badges/${id}`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
+    delete: (id) => api.delete(`/admin/badges/${id}`),
   },
-
 };
 
 export default api;
