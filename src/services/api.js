@@ -54,6 +54,7 @@ export const userAPI = {
   progress: {
     get: () => api.get('/user/progress'),
         getPartProgress: (partId) => api.get(`/progress/part/${partId}`),
+        getSectionProgress: (sectionId) => api.get(`/progress/section/${sectionId}`), // ✅ NEW
     completeExercise: (data) => api.post('/progress/complete-exercise', data),
     getExerciseStatus: (exerciseId) => 
       api.get(`/progress/exercise-status/${exerciseId}`) // ✅ METHOD BARU
@@ -86,6 +87,10 @@ export const userAPI = {
     submitAnswer: (exerciseId, answer) => 
       axios.post(`/api/exercises/${exerciseId}/submit`, { answer }),
     checkCodeTest: (data) => api.post('/exercises/code-test/check', data)
+  },
+    badges: {
+    getUserBadges: () => api.get('/user/badges'),
+    getSectionBadges: (sectionId) => api.get(`/sections/${sectionId}/badges`),
   },
 };
 

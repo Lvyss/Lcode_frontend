@@ -14,7 +14,7 @@ const AdminSections = () => {
     description: '',
     language_id: '',
     order_index: 1,
-    badge_reward: 10,
+    exp_reward: 10,
     is_active: true
   });
 
@@ -86,7 +86,7 @@ const AdminSections = () => {
       description: '',
       language_id: selectedLanguage || '',
       order_index: sections.length + 1,
-      badge_reward: 10,
+      exp_reward: 10,
       is_active: true
     });
   };
@@ -99,7 +99,7 @@ const AdminSections = () => {
       description: section.description || '',
       language_id: section.language_id,
       order_index: section.order_index,
-      badge_reward: section.badge_reward,
+      exp_reward: section.exp_reward,
       is_active: section.is_active
     });
     setShowModal(true);
@@ -213,7 +213,7 @@ const AdminSections = () => {
                       <div className="text-sm text-gray-900">{section.order_index}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{section.badge_reward} EXP</div>
+                      <div className="text-sm text-gray-900">{section.exp_reward} EXP</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
@@ -300,8 +300,8 @@ const AdminSections = () => {
                       type="number"
                       required
                       min="0"
-                      value={formData.badge_reward}
-                      onChange={(e) => setFormData({...formData, badge_reward: parseInt(e.target.value)})}
+                      value={formData.exp_reward}
+                      onChange={(e) => setFormData({...formData, exp_reward: parseInt(e.target.value)})}
                       className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>

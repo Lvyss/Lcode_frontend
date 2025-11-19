@@ -73,6 +73,22 @@ const handleSubmit = async () => {
       
       // ✅ SET ACTUAL OUTPUT UNTUK DITAMPILKAN
       setActualOutput(response.data.actual_output || '(No output)');
+      
+      // ✅ JIKA CODE TEST BERHASIL, PAKAI completeExercise UNTUK PROGRESS & BADGES
+      if (response.data.is_correct) {
+        const progressResponse = await userAPI.progress.completeExercise({
+          exercise_id: exercise.id,
+          user_answer: answerToSubmit
+        });
+        
+        // ✅ GABUNGKAN RESPONSE DATA
+        response.data = {
+          ...progressResponse.data,
+          actual_output: response.data.actual_output, // Keep the code output
+          execution_result: response.data.execution_result // Keep execution details
+        };
+      }
+      
     } else {
       // ✅ STANDARD ENDPOINT UNTUK LAINNYA
       response = await userAPI.progress.completeExercise({
@@ -87,7 +103,8 @@ const handleSubmit = async () => {
     setIsCorrect(response.data.is_correct);
     setCompleted(response.data.is_correct);
     
-    if (onComplete) {
+    // ✅ PASTIKAN onComplete DIPANGGIL UNTUK SEMUA TIPE EXERCISE
+    if (onComplete && response.data) {
       onComplete(response.data);
     }
     
@@ -142,8 +159,8 @@ const renderFillBlank = () => {
 
   return (
     <div className="mb-4">
-      <p className="text-gray-700 mb-4">Fill in the blanks:</p>
-      <div className="p-4 bg-gray-50 rounded-lg leading-8">
+      <p className="mb-4 text-gray-700">Fill in the blanks:</p>
+      <div className="p-4 leading-8 rounded-lg bg-gray-50">
         {questionParts.map((part, index) => {
           if (part.match(/_{1,}/)) {
             const blankIndex = questionParts.slice(0, index).filter(p => p.match(/_{1,}/)).length;
@@ -155,7 +172,7 @@ const renderFillBlank = () => {
                   type="text"
                   value={userAnswerPart}
                   onChange={(e) => handleBlankChange(blankIndex, e.target.value)}
-                  className="w-24 px-2 py-1 mx-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                  className="w-24 px-2 py-1 mx-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="______"
                   disabled={loading || completed}
                 />
@@ -167,7 +184,7 @@ const renderFillBlank = () => {
       </div>
       
       {userAnswer && (
-        <div className="mt-3 p-3 bg-blue-50 rounded">
+        <div className="p-3 mt-3 rounded bg-blue-50">
           <p className="text-sm text-blue-800">
             <strong>Your answers:</strong> {userAnswer.split('|').join(', ')}
           </p>
@@ -212,10 +229,10 @@ useEffect(() => {
     
     return (
       <div className="mb-4">
-        <p className="text-gray-700 mb-4">{exercise.question}</p>
+        <p className="mb-4 text-gray-700">{exercise.question}</p>
         <div className="space-y-2">
           {options.map((option, index) => (
-            <label key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <label key={index} className="flex items-center p-3 space-x-3 border rounded-lg cursor-pointer hover:bg-gray-50">
               <input
                 type="radio"
                  disabled={completed} // ✅ INI YANG PENTING
@@ -233,7 +250,7 @@ useEffect(() => {
         </div>
         
         {selectedOption && (
-          <div className="mt-3 p-3 bg-blue-50 rounded">
+          <div className="p-3 mt-3 rounded bg-blue-50">
             <p className="text-sm text-blue-800">
               <strong>Selected:</strong> {selectedOption}
             </p>
@@ -247,33 +264,33 @@ useEffect(() => {
 const renderCodeTest = () => {
   return (
     <div className="mb-4">
-      <p className="text-gray-700 mb-4">{exercise.question}</p>
+      <p className="mb-4 text-gray-700">{exercise.question}</p>
       
       {exercise.code_template && (
         <div className="p-4 mb-4 bg-gray-900 rounded-lg">
-          <h4 className="text-sm font-medium text-white mb-2">Code Template:</h4>
-          <pre className="text-sm text-green-400 overflow-x-auto">
+          <h4 className="mb-2 text-sm font-medium text-white">Code Template:</h4>
+          <pre className="overflow-x-auto text-sm text-green-400">
             {exercise.code_template}
           </pre>
         </div>
       )}
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block mb-2 text-sm font-medium text-gray-700">
           Complete the code at <code>____</code>:
         </label>
         <textarea
           value={userAnswer}
           onChange={(e) => setUserAnswer(e.target.value)}
           rows={6}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+          className="block w-full px-3 py-2 font-mono text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           placeholder="Write the missing code here (e.g., cout << 'Hello World';)"
           disabled={loading || completed}
         />
       </div>
 
       {/* ✅ SHOW EXPECTED OUTPUT */}
-      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+      <div className="p-3 mt-3 border border-yellow-200 rounded bg-yellow-50">
         <p className="text-sm text-yellow-800">
           <strong>Expected Output:</strong> {exercise.solution.expected_output}
         </p>
@@ -286,9 +303,9 @@ const renderCodeTest = () => {
   const renderDefault = () => {
     return (
       <div className="mb-4">
-        <p className="text-gray-700 mb-4">{exercise.question}</p>
+        <p className="mb-4 text-gray-700">{exercise.question}</p>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
             Your Answer:
           </label>
           <textarea
@@ -345,13 +362,13 @@ if (completed) {
       </div>
 
       {/* ✅ TAMPILKAN QUESTION & ANSWER YANG SUDAH DIJAWAB */}
-      <div className="mt-4 p-4 bg-white rounded-lg border">
-        <h4 className="font-medium text-gray-900 mb-2">Your Solution:</h4>
+      <div className="p-4 mt-4 bg-white border rounded-lg">
+        <h4 className="mb-2 font-medium text-gray-900">Your Solution:</h4>
         
         {exercise.type === 'multiple_choice' && (
           <div>
-            <p className="text-gray-700 mb-2">{exercise.question}</p>
-            <div className="p-3 bg-blue-50 rounded">
+            <p className="mb-2 text-gray-700">{exercise.question}</p>
+            <div className="p-3 rounded bg-blue-50">
               <p className="text-blue-800">
                 <strong>Your answer:</strong> {selectedOption}
               </p>
@@ -363,9 +380,9 @@ if (completed) {
 
         {exercise.type === 'code_test' && (
           <div>
-            <p className="text-gray-700 mb-2">{exercise.question}</p>
+            <p className="mb-2 text-gray-700">{exercise.question}</p>
             <div className="p-3 bg-green-100 rounded">
-              <p className="text-green-800 font-mono text-sm">
+              <p className="font-mono text-sm text-green-800">
                 <strong>Your code:</strong> {userAnswer}
               </p>
             </div>
@@ -376,7 +393,7 @@ if (completed) {
       {/* ✅ TOMBOL UNTUK REVIEW SAJA */}
       <button
         onClick={() => setCompleted(false)}
-        className="mt-4 px-4 py-2 text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50"
+        className="px-4 py-2 mt-4 text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50"
       >
         Review Exercise
       </button>
@@ -410,14 +427,14 @@ return (
     {renderExerciseContent()}
 
 {!completed && isCorrect === false && (
-  <div className="mb-4 p-3 border border-red-200 rounded bg-red-50">
-    <p className="text-sm text-red-800 mb-2">
+  <div className="p-3 mb-4 border border-red-200 rounded bg-red-50">
+    <p className="mb-2 text-sm text-red-800">
       ❌ <strong>Jawaban salah!</strong> Coba lagi atau gunakan hint.
     </p>
     
     {/* ✅ TAMPILKAN OUTPUT COMPARISON UNTUK CODE TEST */}
     {exercise.type === 'code_test' && (
-      <div className="mt-2 p-2 bg-red-100 rounded text-xs">
+      <div className="p-2 mt-2 text-xs bg-red-100 rounded">
         <p><strong>Expected Output:</strong> {exercise.solution.expected_output}</p>
         <p><strong>Your Output:</strong> {actualOutput || 'No output'}</p>
       </div>
@@ -426,14 +443,14 @@ return (
 )}
 
 {!completed && isCorrect === true && (
-  <div className="mb-4 p-3 border border-green-200 rounded bg-green-50">
-    <p className="text-sm text-green-800 mb-2">
+  <div className="p-3 mb-4 border border-green-200 rounded bg-green-50">
+    <p className="mb-2 text-sm text-green-800">
       ✅ <strong>Jawaban benar!</strong> Lanjut ke exercise berikutnya.
     </p>
     
     {/* ✅ TAMPILKAN OUTPUT COMPARISON UNTUK CODE TEST */}
     {exercise.type === 'code_test' && (
-      <div className="mt-2 p-2 bg-green-100 rounded text-xs">
+      <div className="p-2 mt-2 text-xs bg-green-100 rounded">
         <p><strong>Expected Output:</strong> {exercise.solution.expected_output}</p>
         <p><strong>Your Output:</strong> {actualOutput}</p>
       </div>

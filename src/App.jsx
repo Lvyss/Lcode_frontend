@@ -9,7 +9,7 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/user/Dashboard';
 import LanguagePage from './pages/user/LanguagePage'; // ✅ TAMBAH INI
 import PartLearningPage from './pages/user/PartLearningPage'; // ✅ TAMBAH INI
-
+import BadgeCollection from './pages/user/BadgeCollection'; // ✅ NEW
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLanguages from './pages/admin/AdminLanguages';
@@ -80,7 +80,14 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
+<Route 
+  path="/badges" 
+  element={
+    <ProtectedRoute>
+      <BadgeCollection />
+    </ProtectedRoute>
+  } 
+/>
             {/* ✅ ADMIN ROUTES */}
             <Route 
               path="/admin/dashboard" 
