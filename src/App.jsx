@@ -7,15 +7,15 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 
 // ✅ IMPORT SEMUA USER PAGES
 import Dashboard from "./pages/user/Dashboard";
-import LanguagePage from "./pages/user/LanguagePage"; // ✅ TAMBAH INI
-import PartLearningPage from "./pages/user/PartLearningPage"; // ✅ TAMBAH INI
-import BadgeCollection from "./pages/user/BadgeCollection"; // ✅ NEW
-import ProfilePage from "./pages/user/ProfilePage"; // ✅ IMPORT BARU
+import LanguagePage from "./pages/user/LanguagePage";
+import PartLearningPage from "./pages/user/PartLearningPage";
+import BadgeCollection from "./pages/user/BadgeCollection";
+import ProfilePage from "./pages/user/ProfilePage";
+
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLanguages from "./pages/admin/AdminLanguages";
@@ -52,40 +52,42 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-
             {/* ✅ AUTH CALLBACK ROUTE */}
             <Route path="/auth/callback" element={<AuthCallback />} />
 
-            {/* ✅ PROTECTED USER ROUTES */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* ✅ DASHBOARD - PUBLIC BISA DIAKSES TANPA LOGIN */}
+            <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* ✅ TAMBAH USER LEARNING ROUTES */}
-            <Route
-              path="/language/:id"
-              element={
-                <ProtectedRoute>
-                  <LanguagePage />
-                </ProtectedRoute>
-              }
-            />
+            {/* ✅ PROTECTED USER ROUTES - HARUS LOGIN */}
 
-            <Route
-              path="/part/:id"
-              element={
-                <ProtectedRoute>
-                  <PartLearningPage />
-                </ProtectedRoute>
-              }
-            />
+<Route
+  path="/language/:id"
+  element={
+    <ProtectedRoute>
+      <LanguagePage />
+    </ProtectedRoute>
+  }
+/>
+
+{/* ✅ TAMBAH ROUTE BARU UNTUK PART DENGAN STRUCTURE LENGKAP */}
+<Route
+  path="/languages/:languageId/sections/:sectionId/part/:partId"
+  element={
+    <ProtectedRoute>
+      <PartLearningPage />
+    </ProtectedRoute>
+  }
+/>
+
+{/* ✅ KEEP YANG LAMA JUGA UNTUK BACKWARD COMPATIBILITY */}
+<Route
+  path="/part/:id"
+  element={
+    <ProtectedRoute>
+      <PartLearningPage />
+    </ProtectedRoute>
+  }
+/>
             <Route
               path="/badges"
               element={
@@ -102,6 +104,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             {/* ✅ ADMIN ROUTES */}
             <Route
               path="/admin/dashboard"

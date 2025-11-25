@@ -1,353 +1,339 @@
-// src/pages/admin/AdminParts.jsx - SIMPLE WORKING VERSION
+// src/pages/admin/AdminParts.jsx - VERSI TERBARU
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
 import RichTextEditor from '../../components/RichTextEditor';
 
 const AdminParts = () => {
-// UPDATE SEMUA FUNGSI DI AdminParts.jsx
-
-const [parts, setParts] = useState([]);
-const [sections, setSections] = useState([]);
-const [languages, setLanguages] = useState([]);
-const [selectedLanguage, setSelectedLanguage] = useState('');
-const [selectedSection, setSelectedSection] = useState('');
-const [loading, setLoading] = useState(true);
-const [showModal, setShowModal] = useState(false);
-const [editingPart, setEditingPart] = useState(null);
-const [formData, setFormData] = useState({
-  title: '',
-  description: '',
-  section_id: '',
-  order_index: 1,
-  exp_reward: 10,
-  is_active: true,
-  content: '<p>Start writing your learning content here...</p>'
-});
-
-useEffect(() => {
-  fetchLanguages();
-}, []);
-
-useEffect(() => {
-  if (selectedLanguage) {
-    fetchSections(selectedLanguage);
-  }
-}, [selectedLanguage]);
-
-useEffect(() => {
-  if (selectedSection) {
-    fetchParts(selectedSection);
-  }
-}, [selectedSection]);
-
-const fetchLanguages = async () => {
-  try {
-    const response = await adminAPI.languages.get();
-    setLanguages(response.data);
-    setLoading(false);
-  } catch (error) {
-    console.error('Failed to fetch languages:', error);
-    setLoading(false);
-  }
-};
-
-const fetchSections = async (languageId) => {
-  try {
-    const response = await adminAPI.sections.getByLanguage(languageId);
-    setSections(response.data);
-  } catch (error) {
-    console.error('Failed to fetch sections:', error);
-  }
-};
-
-// ✅ FIX: FETCH PARTS DENGAN CONTENT
-const fetchParts = async (sectionId) => {
-  try {
-    const response = await adminAPI.parts.getBySection(sectionId);
-    
-    // ✅ LOAD CONTENT UNTUK SETIAP PART
-    const partsWithContent = await Promise.all(
-      response.data.map(async (part) => {
-        try {
-          // Coba ambil content blocks
-          const contentResponse = await adminAPI.contentBlocks.getByPart(part.id);
-          const contentBlocks = contentResponse.data;
-          
-          // Convert content blocks ke HTML
-          let contentHTML = '<p>Start writing your learning content here...</p>';
-          if (contentBlocks.length > 0) {
-            contentHTML = convertContentBlocksToHTML(contentBlocks);
-          }
-          
-          return {
-            ...part,
-            content_blocks: contentBlocks,
-            content: contentHTML
-          };
-        } catch (error) {
-          console.log(`No content blocks for part ${part.id}:`, error);
-          // Fallback ke content dari field part (jika ada)
-          return {
-            ...part,
-            content_blocks: [],
-            content: part.content || '<p>Start writing your learning content here...</p>'
-          };
-        }
-      })
-    );
-    
-    setParts(partsWithContent);
-  } catch (error) {
-    console.error('Failed to fetch parts:', error);
-  }
-};
-
-// ✅ FUNCTION CONVERT CONTENT BLOCKS KE HTML
-const convertContentBlocksToHTML = (contentBlocks) => {
-  if (!contentBlocks || contentBlocks.length === 0) {
-    return '<p>Start writing your learning content here...</p>';
-  }
-  
-  // Ambil block pertama (kita simpan semua HTML di satu block)
-  const firstBlock = contentBlocks[0];
-  
-  // Jika content berisi HTML, gunakan langsung
-  if (firstBlock.content?.html) {
-    return firstBlock.content.html;
-  }
-  
-  // Fallback ke text_content
-  return `<p>${firstBlock.text_content || 'No content'}</p>`;
-};
-
-// ✅ FIX: HANDLE SUBMIT - SIMPAN PART DAN CONTENT
-// UPDATE handleSubmit - TAMBAH DETAILED ERROR LOGGING
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  console.log('🔄 Submitting part data:', formData);
-  
-  try {
-    // 1. SIMPAN DATA PART DULU (TANPA CONTENT)
-    let partData = {
-      section_id: formData.section_id,
-      title: formData.title,
-      description: formData.description,
-      order_index: formData.order_index,
-      exp_reward: formData.exp_reward,
-      is_active: formData.is_active
-    };
-
-    console.log('📦 Part data to save:', partData);
-
-    let partResponse;
-    
-    if (editingPart) {
-      console.log(`✏️ Updating part ${editingPart.id}`);
-      partResponse = await adminAPI.parts.update(editingPart.id, partData);
-    } else {
-      console.log('🆕 Creating new part');
-      partResponse = await adminAPI.parts.create(partData);
-    }
-
-    console.log('✅ Part saved:', partResponse.data);
-    const partId = partResponse.data.id;
-
-    // 2. ✅ SIMPAN CONTENT KE CONTENT_BLOCKS
-    if (formData.content && formData.content !== '<p></p>' && formData.content !== '<p>Start writing your learning content here...</p>') {
-      console.log('💾 Saving content blocks for part:', partId);
-      console.log('📝 Content to save:', formData.content);
-      await saveContentBlocks(partId, formData.content, !!editingPart);
-    } else {
-      console.log('ℹ️ No content to save or empty content');
-    }
-
-    setShowModal(false);
-    resetForm();
-    
-    // 3. RELOAD PARTS UNTUK DAPAT CONTENT TERBARU
-    if (selectedSection) {
-      console.log('🔄 Reloading parts for section:', selectedSection);
-      await fetchParts(selectedSection);
-    }
-    
-    alert('✅ Part saved successfully with content!');
-  } catch (error) {
-    console.error('❌ FAILED TO SAVE PART:', error);
-    console.error('📋 Error response:', error.response);
-    console.error('🔍 Error details:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
-    
-    alert(`Failed: ${error.response?.data?.message || error.message}`);
-  }
-};
-
-// UPDATE saveContentBlocks di AdminParts.jsx - GUNAKAN TYPE YANG VALID
-const saveContentBlocks = async (partId, htmlContent, isEditing = false) => {
-  try {
-    console.log(`💾 Starting content blocks save for part ${partId}, editing: ${isEditing}`);
-    
-    // Jika edit, hapus content blocks lama dulu
-    if (isEditing) {
-      try {
-        console.log(`🗑️ Deleting old content blocks for part ${partId}`);
-        const existingContent = await adminAPI.contentBlocks.getByPart(partId);
-        console.log(`Found ${existingContent.data.length} existing content blocks`);
-        
-        for (let block of existingContent.data) {
-          console.log(`Deleting content block ${block.id}`);
-          await adminAPI.contentBlocks.delete(partId, block.id);
-        }
-        console.log('✅ Old content blocks deleted');
-      } catch (error) {
-        console.log('ℹ️ No existing content blocks to delete or error:', error.message);
-      }
-    }
-
-    // ✅ GUNAKAN TYPE YANG SUDAH DIVALIDASI
-    const contentBlockData = {
-      type: 'paragraph', // ✅ GUNAKAN paragraph BUKAN html_content
-      content: { 
-        html: htmlContent,
-        text: stripHTML(htmlContent).substring(0, 200) + '...'
-      },
-      text_content: stripHTML(htmlContent),
-      order_index: 1,
-      language: 'html',
-      metadata: { 
-        format: 'html',
-        created_at: new Date().toISOString()
-      }
-    };
-
-    console.log('📦 Content block data to save:', contentBlockData);
-    
-    // Simpan content block
-    console.log(`🚀 Sending POST to /admin/parts/${partId}/content-blocks`);
-    const response = await adminAPI.contentBlocks.create(partId, contentBlockData);
-    console.log('✅ Content block saved successfully!', response.data);
-    
-  } catch (error) {
-    console.error('❌ FAILED TO SAVE CONTENT BLOCK:', error);
-    console.error('📋 Content block error response:', error.response);
-    console.error('🔍 Content block error details:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-      url: error.config?.url
-    });
-    
-    // Jangan throw error, biar part tetap tersimpan
-    console.log('⚠️ Continuing without content block save');
-  }
-};
-
-
-// ✅ FUNCTION UNTUK HAPUS HTML TAGS
-const stripHTML = (html) => {
-  if (!html) return '';
-  const tmp = document.createElement('DIV');
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || '';
-};
-
-// ✅ FIX: RESET FORM
-const resetForm = () => {
-  setEditingPart(null);
-  setFormData({
+  // ... STATE declarations remain the same
+  const [parts, setParts] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedSection, setSelectedSection] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingPart, setEditingPart] = useState(null);
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
-    section_id: selectedSection || '',
-    order_index: parts.length + 1,
+    section_id: '',
+    order_index: 1,
     exp_reward: 10,
     is_active: true,
     content: '<p>Start writing your learning content here...</p>'
   });
-};
 
-// ✅ FIX: HANDLE EDIT - LOAD CONTENT DENGAN BENAR
-const handleEdit = (part) => {
-  console.log('📝 Editing part:', part);
-  
-  setEditingPart(part);
-  setFormData({
-    title: part.title,
-    description: part.description || '',
-    section_id: part.section_id,
-    order_index: part.order_index,
-    exp_reward: part.exp_reward,
-    is_active: part.is_active,
-    content: part.content || '<p>Start writing your learning content here...</p>'
-  });
-  
-  // Find language from section
-  const section = sections.find(s => s.id === part.section_id);
-  if (section) {
-    setSelectedLanguage(section.language_id);
-    setSelectedSection(part.section_id);
-  }
-  
-  setShowModal(true);
-};
+  useEffect(() => {
+    fetchLanguages();
+  }, []);
 
-// ✅ FIX: HANDLE DELETE - HAPUS CONTENT DULU
-const handleDelete = async (id) => {
-  if (window.confirm('Are you sure you want to delete this part? This will also delete all associated content.')) {
+  useEffect(() => {
+    if (selectedLanguage) {
+      fetchSections(selectedLanguage);
+    }
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    if (selectedSection) {
+      fetchParts(selectedSection);
+      // Update form data with new section_id and order_index when section changes
+      setFormData(prev => ({
+        ...prev,
+        section_id: selectedSection,
+        order_index: parts.length + 1 // Will be slightly inaccurate but good initial guess
+      }));
+    }
+  }, [selectedSection]);
+
+  const fetchLanguages = async () => {
     try {
-      // 1. HAPUS CONTENT BLOCKS DULU (jika ada)
-      try {
-        const contentResponse = await adminAPI.contentBlocks.getByPart(id);
-        const contentBlocks = contentResponse.data;
-        
-        for (let block of contentBlocks) {
-          await adminAPI.contentBlocks.delete(id, block.id);
-        }
-        console.log(`🗑️ Deleted ${contentBlocks.length} content blocks`);
-      } catch (error) {
-        console.log('No content blocks to delete or error:', error);
+      const response = await adminAPI.languages.get();
+      setLanguages(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch languages:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchSections = async (languageId) => {
+    try {
+      const response = await adminAPI.sections.getByLanguage(languageId);
+      setSections(response.data);
+    } catch (error) {
+      console.error('Failed to fetch sections:', error);
+    }
+  };
+
+  // ✅ FIX: FETCH PARTS DENGAN CONTENT
+  const fetchParts = async (sectionId) => {
+    try {
+      const response = await adminAPI.parts.getBySection(sectionId);
+      
+      // ✅ LOAD CONTENT UNTUK SETIAP PART
+      const partsWithContent = await Promise.all(
+        response.data.map(async (part) => {
+          try {
+            // Coba ambil content blocks
+            const contentResponse = await adminAPI.contentBlocks.getByPart(part.id);
+            const contentBlocks = contentResponse.data;
+            
+            // Convert content blocks ke HTML
+            let contentHTML = '<p>Start writing your learning content here...</p>';
+            if (contentBlocks.length > 0) {
+              contentHTML = convertContentBlocksToHTML(contentBlocks);
+            }
+            
+            return {
+              ...part,
+              content_blocks: contentBlocks,
+              content: contentHTML // Gunakan contentHTML dari content blocks
+            };
+          } catch (error) {
+            console.log(`No content blocks for part ${part.id}:`, error);
+            // Fallback ke content dari field part (jika ada)
+            return {
+              ...part,
+              content_blocks: [],
+              content: part.content || '<p>Start writing your learning content here...</p>'
+            };
+          }
+        })
+      );
+      
+      setParts(partsWithContent.sort((a, b) => a.order_index - b.order_index));
+    } catch (error) {
+      console.error('Failed to fetch parts:', error);
+    }
+  };
+
+  // ✅ FUNCTION CONVERT CONTENT BLOCKS KE HTML
+  const convertContentBlocksToHTML = (contentBlocks) => {
+    if (!contentBlocks || contentBlocks.length === 0) {
+      return '<p>Start writing your learning content here...</p>';
+    }
+    
+    // Kita asumsikan hanya ada satu content block yang berisi semua HTML dari RichTextEditor
+    const firstBlock = contentBlocks.sort((a, b) => a.order_index - b.order_index)[0];
+    
+    // Cek content object, lalu text_content
+    if (firstBlock.content?.html) {
+      return firstBlock.content.html;
+    }
+    
+    // Fallback ke text_content (asumsikan mungkin sudah berbentuk HTML atau setidaknya text)
+    return firstBlock.text_content || '<p>No content</p>';
+  };
+
+  // ✅ FIX: HANDLE SUBMIT - SIMPAN PART DAN CONTENT
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    console.log('🔄 Submitting part data:', formData);
+    
+    try {
+      // 1. SIMPAN DATA PART DULU (TANPA CONTENT)
+      let partData = {
+        section_id: formData.section_id,
+        title: formData.title,
+        description: formData.description,
+        order_index: formData.order_index,
+        exp_reward: formData.exp_reward,
+        is_active: formData.is_active
+      };
+
+      let partResponse;
+      
+      if (editingPart) {
+        partResponse = await adminAPI.parts.update(editingPart.id, partData);
+      } else {
+        partResponse = await adminAPI.parts.create(partData);
       }
 
-      // 2. HAPUS PART
-      await adminAPI.parts.delete(id);
+      console.log('✅ Part saved:', partResponse.data);
+      const partId = partResponse.data.id;
+
+      // 2. ✅ SIMPAN CONTENT KE CONTENT_BLOCKS
+      const contentToSave = formData.content.trim();
+      const defaultContent = '<p>Start writing your learning content here...</p>';
       
-      // 3. RELOAD DATA
+      if (contentToSave && contentToSave !== '<p></p>' && contentToSave !== defaultContent) {
+        console.log('💾 Saving content blocks for part:', partId);
+        await saveContentBlocks(partId, contentToSave, !!editingPart);
+      } else {
+        console.log('ℹ️ No content to save or empty content. Deleting old if editing.');
+        if (editingPart) {
+          // Jika konten dikosongkan saat edit, hapus content blocks lama
+          await deleteContentBlocks(partId);
+        }
+      }
+
+      setShowModal(false);
+      resetForm();
+      
+      // 3. RELOAD PARTS UNTUK DAPAT CONTENT TERBARU
       if (selectedSection) {
         await fetchParts(selectedSection);
       }
       
-      alert('✅ Part deleted successfully!');
+      alert(`✅ Part ${editingPart ? 'updated' : 'created'} successfully!`);
     } catch (error) {
-      console.error('❌ Failed to delete part:', error);
-      const errorMsg = error.response?.data?.message || 'Unknown error';
+      console.error('❌ FAILED TO SAVE PART:', error);
+      alert(`Failed: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  // ✅ FUNCTION UNTUK DELETE SEMUA CONTENT BLOCKS
+  const deleteContentBlocks = async (partId) => {
+    try {
+      console.log(`🗑️ Deleting all content blocks for part ${partId}`);
+      const existingContent = await adminAPI.contentBlocks.getByPart(partId);
+      for (let block of existingContent.data) {
+        await adminAPI.contentBlocks.delete(partId, block.id);
+      }
+      console.log('✅ Old content blocks deleted');
+    } catch (error) {
+      // Not critical if it fails (e.g. no blocks exist)
+      console.log('ℹ️ Error deleting existing content blocks (might not exist):', error.message);
+    }
+  };
+
+  // UPDATE saveContentBlocks di AdminParts.jsx - GUNAKAN TYPE YANG VALID
+  const saveContentBlocks = async (partId, htmlContent, isEditing = false) => {
+    try {
+      // Jika edit, hapus content blocks lama dulu (untuk menjaga hanya ada 1 block)
+      if (isEditing) {
+        await deleteContentBlocks(partId);
+      }
+
+      // ✅ GUNAKAN TYPE 'html' atau 'paragraph' yang bisa menyimpan konten HTML
+      const contentBlockData = {
+        type: 'paragraph', // Menggunakan 'paragraph' untuk konten utama
+        content: { 
+          html: htmlContent,
+          text: stripHTML(htmlContent).substring(0, 200) + '...'
+        },
+        text_content: stripHTML(htmlContent),
+        order_index: 1,
+        // language: 'html', // Field language ini lebih untuk code block
+        metadata: { 
+          format: 'html',
+          editor: 'RichTextEditor'
+        }
+      };
+
+      console.log('📦 Content block data to save:', contentBlockData);
       
-      if (errorMsg.includes('existing content') || errorMsg.includes('existing exercises')) {
-        alert(`Cannot delete part: ${errorMsg}\n\nPlease try again or contact support.`);
-      } else {
+      // Simpan content block
+      const response = await adminAPI.contentBlocks.create(partId, contentBlockData);
+      console.log('✅ Content block saved successfully!', response.data);
+      
+    } catch (error) {
+      console.error('❌ FAILED TO SAVE CONTENT BLOCK:', error);
+      console.log('⚠️ Continuing without content block save');
+    }
+  };
+
+
+  // ✅ FUNCTION UNTUK HAPUS HTML TAGS
+  const stripHTML = (html) => {
+    if (!html) return '';
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  // ✅ FIX: RESET FORM
+  const resetForm = () => {
+    setEditingPart(null);
+    setFormData({
+      title: '',
+      description: '',
+      section_id: selectedSection || '',
+      order_index: parts.length + 1,
+      exp_reward: 10,
+      is_active: true,
+      content: '<p>Start writing your learning content here...</p>'
+    });
+  };
+
+  // ✅ FIX: HANDLE EDIT - LOAD CONTENT DENGAN BENAR
+  const handleEdit = (part) => {
+    setEditingPart(part);
+    
+    // Pastikan part.content sudah terisi dari fetchParts
+    const contentToEdit = part.content || '<p>Start writing your learning content here...</p>';
+    
+    setFormData({
+      title: part.title,
+      description: part.description || '',
+      section_id: part.section_id,
+      order_index: part.order_index,
+      exp_reward: part.exp_reward,
+      is_active: part.is_active,
+      content: contentToEdit // Menggunakan content yang sudah di-load
+    });
+    
+    // Find language from section
+    const section = sections.find(s => s.id === part.section_id);
+    if (section) {
+      setSelectedLanguage(section.language_id);
+      setSelectedSection(part.section_id);
+    }
+    
+    setShowModal(true);
+  };
+
+  // ✅ FIX: HANDLE DELETE - HAPUS CONTENT DULU
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this part? This will also delete all associated content.')) {
+      try {
+        // 1. HAPUS CONTENT BLOCKS DULU
+        await deleteContentBlocks(id);
+
+        // 2. HAPUS PART
+        await adminAPI.parts.delete(id);
+        
+        // 3. RELOAD DATA
+        if (selectedSection) {
+          await fetchParts(selectedSection);
+        }
+        
+        alert('✅ Part deleted successfully!');
+      } catch (error) {
+        console.error('❌ Failed to delete part:', error);
+        const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
         alert(`Delete failed: ${errorMsg}`);
       }
     }
-  }
-};
+  };
 
-// ✅ FIX: TOGGLE ACTIVE
-const toggleActive = async (part) => {
-  try {
-    await adminAPI.parts.update(part.id, {
-      ...part,
-      is_active: !part.is_active
-    });
-    if (selectedSection) {
-      await fetchParts(selectedSection);
+  // ✅ FIX: TOGGLE ACTIVE
+  const toggleActive = async (part) => {
+    try {
+      // Hanya kirim field yang diubah
+      const updateData = {
+        is_active: !part.is_active
+      };
+
+      await adminAPI.parts.update(part.id, updateData);
+      
+      // Update state secara lokal untuk respons yang cepat
+      setParts(parts.map(p => 
+        p.id === part.id ? { ...p, is_active: !p.is_active } : p
+      ));
+
+      // Opsional: fetchParts jika data lain mungkin berubah (misalnya, timestamp update)
+      // if (selectedSection) {
+      //   await fetchParts(selectedSection);
+      // }
+    } catch (error) {
+      console.error('Failed to toggle part status:', error);
+      alert('Failed to update part status');
     }
-  } catch (error) {
-    console.error('Failed to toggle part status:', error);
-    alert('Failed to update part status');
-  }
-};
+  };
 
+  // ... (JSX render remains the same)
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -506,7 +492,7 @@ const toggleActive = async (part) => {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* MODAL (JSX remains the same, using formData) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">

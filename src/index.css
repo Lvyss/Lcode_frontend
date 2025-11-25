@@ -2,42 +2,240 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tambahkan di global CSS atau Tailwind custom */
-.ProseMirror {
-  table {
-    border-collapse: collapse;
-    margin: 0;
-    overflow: hidden;
-    table-layout: fixed;
-    width: 100%;
+html, body, #root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.hover-white-overlay {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-white-overlay img {
+  display: block;
+}
+
+.hover-white-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.3s ease;
+  border-radius: 9999px; /* Supaya sesuai rounded-full */
+  pointer-events: none;
+}
+
+.hover-white-overlay:hover::after {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Light.otf') format('opentype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.otf') format('opentype');
+  font-weight: 700;
+}
+
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 6s linear infinite;
   }
 
-  table td,
-  table th {
-    border: 1px solid #d1d5db;
-    box-sizing: border-box;
-    min-width: 1em;
-    padding: 8px 12px;
-    position: relative;
-    vertical-align: top;
-  }
+.animate-glow {
+  box-shadow:
+    0 0 15px rgba(91, 115, 242, 0.5),
+    0 0 30px rgba(91, 115, 242, 0.3),
+    0 0 45px rgba(91, 115, 242, 0.2);
+  transition: box-shadow 0.3s ease;
+}
 
-  table th {
-    background-color: #f9fafb;
-    font-weight: bold;
-    text-align: left;
-  }
+.animate-glow:hover {
+  box-shadow:
+    0 0 25px rgba(91, 115, 242, 0.7),
+    0 0 50px rgba(91, 115, 242, 0.5),
+    0 0 75px rgba(91, 115, 242, 0.4);
+}
 
-  table .selectedCell {
-    background-color: #e5e7eb;
-  }
 
-  /* Table controls */
-  .tableWrapper {
-    overflow-x: auto;
-  }
 
-  .resize-cursor {
-    cursor: col-resize;
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
+}
+
+/* Ripple Effect */
+.ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 0.5s linear;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(6);
+    opacity: 0;
+  }
+}
+
+/* Sparkle Effect */
+.sparkle::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+  background-size: 10px 10px;
+  animation: sparkle 2s linear infinite;
+}
+
+@keyframes sparkle {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+/* Untuk Chrome, Edge, Safari */
+.scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Untuk Firefox */
+.scroll-hide {
+  scrollbar-width: none;
+}
+
+/* Untuk IE/Edge lama */
+.scroll-hide {
+  -ms-overflow-style: none;
+}
+
+/* Hilangkan spinner di Chrome, Safari, Edge, dan Opera */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hilangkan spinner di Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Styling untuk Code Block Lowlight (Dark Theme) */
+
+/* Target elemen <pre> di dalam editor */
+.tiptap-editor .tiptap-content pre {
+  background-color: #282c34; /* BG Gelap (Atom One Dark) */
+  color: #abb2bf; /* Teks Default */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1em 0; /* Tambahkan margin agar tidak menempel */
+  position: relative;
+}
+
+/* Target elemen <code> di dalam <pre> */
+.tiptap-editor .tiptap-content pre code {
+  color: #abb2bf; 
+  background: none; 
+  padding: 0;
+  font-size: 0.875rem; 
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+}
+
+/* --- Lowlight Syntax Tokens (Contoh Warna Populer Dark Theme) --- */
+
+/* Keywords, Operators, Punctuation */
+.tiptap-editor pre .hljs-keyword,
+.tiptap-editor pre .hljs-operator,
+.tiptap-editor pre .hljs-punctuation {
+  color: #c678dd; /* Ungu */
+}
+
+/* Strings, Regex, URLs */
+.tiptap-editor pre .hljs-string,
+.tiptap-editor pre .hljs-regexp,
+.tiptap-editor pre .hljs-link {
+  color: #98c379; /* Hijau */
+}
+
+/* Numbers, Booleans, Constants */
+.tiptap-editor pre .hljs-number,
+.tiptap-editor pre .hljs-boolean,
+.tiptap-editor pre .hljs-literal {
+  color: #d19a66; /* Oranye */
+}
+
+/* Function Names, Class Names, Identifiers */
+.tiptap-editor pre .hljs-title,
+.tiptap-editor pre .hljs-function,
+.tiptap-editor pre .hljs-class .hljs-title {
+  color: #61afef; /* Biru */
+}
+
+/* Variables, Properties, Attributes */
+.tiptap-editor pre .hljs-variable,
+.tiptap-editor pre .hljs-attr {
+  color: #e6c07b; /* Kuning */
+}
+
+/* Comments, Docstrings */
+.tiptap-editor pre .hljs-comment,
+.tiptap-editor pre .hljs-quote {
+  color: #5c6370; /* Abu-abu */
+  font-style: italic;
+}
+
+/* Tags (HTML/XML), Built-in keywords (e.g. 'this') */
+.tiptap-editor pre .hljs-tag,
+.tiptap-editor pre .hljs-built_in {
+  color: #e06c75; /* Merah */
+}
+
+/* Opsional: Tampilkan nama bahasa */
+.tiptap-editor pre[data-language]:before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* Styling untuk inline code <code> di luar code block (Opsional) */
+.tiptap-editor .tiptap-content code {
+  background-color: #f0f0f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.3rem;
+  font-family: 'Consolas', monospace;
+  font-size: 0.875rem;
+  color: #e06c75;
 }
